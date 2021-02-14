@@ -74,6 +74,20 @@ const FoodDetails: React.FC = () => {
   useEffect(() => {
     async function loadFood(): Promise<void> {
       // Load a specific food with extras based on routeParams id
+
+      try {
+        const response = await api.get<Food>(`foods/${routeParams.id}`);
+
+        setFood({
+          ...response.data,
+          formattedPrice: formatValue(response.data.price)
+        });
+
+        setExtras(response.data.extras.map((extra: Omit<Extra, 'quantity'>) => ({...extra, quantity: 0})));
+
+      } catch (error) {
+        console.log(error);
+      }
     }
 
     loadFood();
@@ -81,30 +95,66 @@ const FoodDetails: React.FC = () => {
 
   function handleIncrementExtra(id: number): void {
     // Increment extra quantity
+
+    setExtras(extras.map(extra => extra.id === id ? {...extra, quantity: extra.quantity + 1} : extra))
   }
 
   function handleDecrementExtra(id: number): void {
     // Decrement extra quantity
+    setExtras(extras.map(extra => extra.id === id && extra.quantity > 0 ? {...extra, quantity: extra.quantity - 1} : extra))
+
   }
 
   function handleIncrementFood(): void {
     // Increment food quantity
+    setFoodQuantity(foodQuantity+1);
   }
 
   function handleDecrementFood(): void {
     // Decrement food quantity
+
+    if(foodQuantity > 1){
+      setFoodQuantity(foodQuantity-1);
+    }
   }
 
   const toggleFavorite = useCallback(() => {
     // Toggle if food is favorite or not
+
+    if(isFavorite){
+      api.post(`favorites`, {
+        food
+      });
+    }else{
+      api.delete(`favorites/${food.id}`);
+
+    }
+
+    setIsFavorite(!isFavorite);
   }, [isFavorite, food]);
 
   const cartTotal = useMemo(() => {
     // Calculate cartTotal
+
+    const extraTotal = extras.reduce((previous, current)=>{
+      return previous + (current.value * current.quantity);
+    },0);
+
+    return formatValue((food.price + extraTotal) * foodQuantity);
+
   }, [extras, food, foodQuantity]);
 
   async function handleFinishOrder(): Promise<void> {
     // Finish the order and save on the API
+
+    // try{
+    //   const response = await api.get(`order`, {
+
+    //   });
+
+    // } catch (error) {
+    //   console.log(error);
+    // }
   }
 
   // Calculate the correct icon name
